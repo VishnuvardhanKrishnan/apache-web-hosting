@@ -9,7 +9,7 @@
 dt=$(date +%Y%m%d%H%M)
 
 #CloudFront Configuration Path
-CF_PATH="/home/vk632740/cf-setup"
+CF_PATH="/home/VishnuvardhanKrishnan/cf-setup"
 logfile="$CF_PATH/cfsetup-$dt.log"
 
 #Input Site count & details
@@ -17,8 +17,8 @@ read -p "Enter Number of Sites to be on-boarded : " no_sites
 
 if [ $no_sites -ge 1 ]; then
         for ((i=1;; i++)); do
-                read -p "Enter domain name of Site#$i (example: gskpro.com): " sitedomain[$i]
-				sitedomain[$i]=$(echo ${sitedomain[$i]} | sed -e 's/www\.//g')
+                read -p "Enter domain name of Site#$i (example: livetechs.net): " sitedomain[$i]
+                                sitedomain[$i]=$(echo ${sitedomain[$i]} | sed -e 's/www\.//g')
 
                 if [ $i == $no_sites ]; then break; fi
         done
@@ -28,13 +28,13 @@ fi
 
 if [ $no_sites -ge 1 ]; then
         for ((i=1;; i++)); do
+if [ $i == $no_sites ]; then break; fi
         echo "Site#$i is ${sitedomain[$i]}" |tee -a $logfile
 
                 #Validate if domain is valid FQDN
                 host ${sitedomain[$i]} 2>&1 > /dev/null
                 if [ $? -ne 0 ];then
-                        echo "${sitedomain[$i]} is not a valid domain. Try again!" |tee -a $logfile
-						exit 1
+                        echo "Site ${sitedomain[$i]} is not a valid domain. Try again!" |tee -a $logfile
                 fi
 
                 #Find AEM version of the site
@@ -46,7 +46,6 @@ if [ $no_sites -ge 1 ]; then
                 if [[ $cloudfront_yn = *"cloudfront"* ]];
                 then
                         echo "Site ${sitedomain[$i]} is already live on CloudFront!!" |tee -a $logfile
-                        exit 1
                 fi
 
                 #Assign CloudFront template based on CF version
@@ -64,7 +63,7 @@ if [ $no_sites -ge 1 ]; then
                         CF_CONFIG="$CF_PATH/cf5.json"
                 else
                         echo "Site ${sitedomain[$i]} is non-AEM site." |tee -a $logfile
-                        exit 1
+                        continue #exit 1
                 fi
 
                 #CloudFront Distribution Comment. Using site name as comment.
@@ -87,15 +86,12 @@ if [ $no_sites -ge 1 ]; then
                 if [[ "$error_check1" -gt "0" ]];
                 then
                         echo "You don't have required permissions to create CloudFront Distribution" |tee -a $logfile
-                        exit 1
                 elif [[ "$error_check2" -gt "0" ]];
                 then
                         echo "CloudFront Distribution already exists for the website ${sitedomain[$i]}. Check if Route53 record updated" |tee -a $logfile
-                        exit 1
                 elif [[ "$error_check3" -gt "0" ]];
                 then
                         echo "CloudFront Distribution already exists for the website ${sitedomain[$i]}. Check if Route53 record updated" |tee -a $logfile
-                        exit 1
                 else
                         CF_ID=$(cat $SITE_OUTPUT_JSON | grep "\"Id\"" | grep -v origin |sed 's/.*: //g' | sed 's/,//g')
                         echo "CloudFront Distro Created for the website ${sitedomain[$i]} and ID is $CF_ID" |tee -a $logfile
